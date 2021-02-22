@@ -1,23 +1,23 @@
-package main
+package gogol
 
 import (
 	"errors"
 	"math/rand"
 )
 
-type t_color struct {
+type TColor struct {
 	R int
 	G int
 	B int
 }
 
-type t_world struct {
+type TWorld struct {
 	data [][] int
 }
 
-type t_unit struct {
-	data []float32
-	color t_color
+type TUnit struct {
+	data  []float32
+	color TColor
 
 	life uint
 	gain uint
@@ -26,7 +26,7 @@ type t_unit struct {
 	y int
 }
 
-func Color (index int, value int) t_color {
+func Color (index int, value int) TColor {
 	if index > 2 {
 		panic(errors.New("unInvalidColorIndex"))
 	}
@@ -34,7 +34,7 @@ func Color (index int, value int) t_color {
 	tpl := [3]int {0, 0, 0}
 	tpl[index] = value
 
-	return t_color{tpl[0], tpl[1], tpl[2]}
+	return TColor{tpl[0], tpl[1], tpl[2]}
 }
 
 func Triangles (columns, rows, x, y int) []float32 {
@@ -64,15 +64,15 @@ func Triangles (columns, rows, x, y int) []float32 {
 	return triangles
 }
 
-func Units (columns, rows, population int) [][]*t_unit {
-	units := make([][]*t_unit, columns)
+func Units (columns, rows, population int) [][]*TUnit {
+	units := make([][]*TUnit, columns)
 
 	for x := range units {
-		units[x] = make([]*t_unit, columns)
+		units[x] = make([]*TUnit, columns)
 
 		for y :=  range units[x] {
-			units[x][y] = &t_unit{Triangles(columns, rows, x, y),
-				t_color{255, 255, 255 }, 0, 0, x, y}
+			units[x][y] = &TUnit{Triangles(columns, rows, x, y),
+				TColor{255, 255, 255 }, 0, 0, x, y}
 		}
 	}
 
@@ -84,7 +84,7 @@ func Units (columns, rows, population int) [][]*t_unit {
 	return units
 }
 
-func (self *t_unit) Neighbors(units [][]*t_unit) int {
+func (self *TUnit) Neighbors(units [][]*TUnit) int {
 	count := 0
 
 	for x := self.x - 1; x <= self.x + 1; x++ {
@@ -106,6 +106,6 @@ func (self *t_unit) Neighbors(units [][]*t_unit) int {
 	return  count
 }
 
-func (self *t_unit) Refresh() {
+func (self *TUnit) Refresh() {
 	self.life = self.gain
 }
