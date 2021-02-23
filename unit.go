@@ -11,16 +11,12 @@ type TColor struct {
 	B int
 }
 
-type TWorld struct {
-	data [][] int
-}
-
 type TUnit struct {
 	data  []float32
 	color TColor
 
-	life uint
-	gain uint
+	Life uint
+	Gain uint
 
 	x int
 	y int
@@ -37,7 +33,7 @@ func Color (index int, value int) TColor {
 	return TColor{tpl[0], tpl[1], tpl[2]}
 }
 
-func Triangles (columns, rows, x, y int) []float32 {
+func Triangles (columns, rows uint, x, y int) []float32 {
 	var (
 		triangles = []float32{
 			-1 , 1 * (2 / float32(rows) - 1), 0,
@@ -64,7 +60,7 @@ func Triangles (columns, rows, x, y int) []float32 {
 	return triangles
 }
 
-func Units (columns, rows, population int) [][]*TUnit {
+func Units (columns, rows, population uint) [][]*TUnit {
 	units := make([][]*TUnit, columns)
 
 	for x := range units {
@@ -77,24 +73,24 @@ func Units (columns, rows, population int) [][]*TUnit {
 	}
 
 	for population > 0 {
-		units[rand.Intn(columns)][rand.Intn(rows)].gain = 1
+		units[rand.Intn(int(columns))][rand.Intn(int(rows))].Gain = 1
 		population--
 	}
 
 	return units
 }
 
-func (self *TUnit) Neighbors(units [][]*TUnit) int {
+func (u *TUnit) Neighbors(units [][]*TUnit) int {
 	count := 0
 
-	for x := self.x - 1; x <= self.x + 1; x++ {
+	for x := u.x - 1; x <= u.x + 1; x++ {
 		if x >= 0 && x <= len(units) - 1 {
 
-			for y := self.y - 1; y <= self.y + 1; y++ {
+			for y := u.y - 1; y <= u.y + 1; y++ {
 				if y >= 0 && y <= len(units[x]) -1 {
 
-					if x != self.x || y != self.y {
-						if units[x][y].life > 0 {
+					if x != u.x || y != u.y {
+						if units[x][y].Life > 0 {
 							count++
 						}
 					}
@@ -106,6 +102,6 @@ func (self *TUnit) Neighbors(units [][]*TUnit) int {
 	return  count
 }
 
-func (self *TUnit) Refresh() {
-	self.life = self.gain
+func (u *TUnit) Refresh() {
+	u.Life = u.Gain
 }

@@ -9,21 +9,18 @@ import (
 )
 
 const (
-	MinWidth  = 200
-	MinHeight = 200
+	Size uint = 20
+	Duration uint = 10
+	MinWidth uint = 200
+	MinHeight uint = 200
 )
 
 type Engine struct {
 	handler uint32
-
-	Units [][]*TUnit
+	units [][]*TUnit
 }
 
-func (e *Engine) init (duration int64, width int, height int) error {
-	if duration < 1 {
-		errors.New("invalid uiDuration")
-	}
-
+func (e *Engine) Init (action func([][]*TUnit) error, width uint, height uint) error {
 	if width < MinWidth {
 		errors.New("invalid uiWidth")
 	}
@@ -37,19 +34,16 @@ func (e *Engine) init (duration int64, width int, height int) error {
 	}
 
 	defer glfw.Terminate()
-	e.handler = glInit()
 
 	glfw.WindowHint(glfw.Resizable, glfw.False)
 	glfw.WindowHint(glfw.Decorated, glfw.False)
 	glfw.WindowHint(glfw.Focused, glfw.True)
-
 	glfw.WindowHint(glfw.ContextVersionMajor, 4)
 	glfw.WindowHint(glfw.ContextVersionMinor, 1)
-
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 
-	window, err := glfw.CreateWindow(width, height, "Test window", nil, nil)
+	window, err := glfw.CreateWindow(int(width), int(height), "Test window", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -57,15 +51,22 @@ func (e *Engine) init (duration int64, width int, height int) error {
 	window.MakeContextCurrent()
 	window.Maximize()
 
+	e.handler = glInit()
+	e.units = Units(width / Size, height / Size, 1500)
+
 	timeMark := time.Now()
 	for !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		gl.UseProgram(e.handler)
 
-		for x := range e.Units {
-			for y := range e.Units[x] {
-				if e.Units[x][y].life > 0 {
-					e.draw(e.Units[x][y].data, e.Units[x][y].color)
+		if err := action(e.units); err != nil {
+			glfw.Terminate()
+		} else {
+			for x := range e.units {
+				for y := range e.units[x] {
+					if e.units[x][y].Life > 0 {
+						e.draw(e.units[x][y].data, e.units[x][y].color)
+					}
 				}
 			}
 		}
@@ -73,7 +74,7 @@ func (e *Engine) init (duration int64, width int, height int) error {
 		glfw.PollEvents()
 		window.SwapBuffers()
 
-		time.Sleep(time.Second/time.Duration(duration) - time.Since(timeMark))
+		time.Sleep(time.Second/time.Duration(Duration) - time.Since(timeMark))
 		timeMark = time.Now()
 	}
 
