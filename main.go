@@ -15,12 +15,45 @@ const (
 	MinHeight uint = 200
 )
 
-type Engine struct {
-	handler uint32
-	units [][]*TUnit
+type Color struct {
+	R int
+	G int
+	B int
 }
 
-func (e *Engine) Init (action func([][]*TUnit) error, width uint, height uint) error {
+func (c *Color) Default () {
+	c.R, c.G, c.B = 0, 0, 0
+}
+
+type Point struct {
+	Color Color
+
+	x uint
+	y uint
+
+	data  []float32
+}
+
+func (p *Point) Default () {
+	p.Color, p.x, p.y = Color{0,0,0}, 0, 0
+}
+
+func (p *Point) Draw (location int32)  {
+	gl.Uniform3f(location, float32(p.Color.R), float32(p.Color.G), float32(p.Color.B))
+
+	gl.BindVertexArray(glMakeVao(p.data))
+	gl.DrawArrays(gl.TRIANGLES, 0, int32(len(p.data) / 3))
+}
+
+type Engine struct {
+	handler uint32
+	points  [][]*Point
+
+	Columns uint
+	Rows uint
+}
+
+func (e *Engine) Init (action func([][]*Point) error, width uint, height uint) error {
 	if width < MinWidth {
 		errors.New("invalid uiWidth")
 	}
@@ -34,7 +67,6 @@ func (e *Engine) Init (action func([][]*TUnit) error, width uint, height uint) e
 	}
 
 	defer glfw.Terminate()
-
 	glfw.WindowHint(glfw.Resizable, glfw.False)
 	glfw.WindowHint(glfw.Decorated, glfw.False)
 	glfw.WindowHint(glfw.Focused, glfw.True)
@@ -52,21 +84,33 @@ func (e *Engine) Init (action func([][]*TUnit) error, width uint, height uint) e
 	window.Maximize()
 
 	e.handler = glInit()
-	e.units = Units(width / Size, height / Size, 1500)
+	e.Rows, e.Columns = width / Size, height / Size
+
+	e.points = make([][]*Point, e.Columns)
+	for x := range e.points {
+		e.points[x] = make([]*Point, e.Rows)
+
+		for y :=  range e.points[x] {
+			e.points[x][y] = &Point{
+				Color{255, 255, 255 },
+				uint(x),
+				uint(y),
+				glPrepareTriangles(e.Columns, e.Rows, x, y),
+			}
+		}
+	}
 
 	timeMark := time.Now()
 	for !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		gl.UseProgram(e.handler)
 
-		if err := action(e.units); err != nil {
+		if err := action(e.points); err != nil {
 			glfw.Terminate()
 		} else {
-			for x := range e.units {
-				for y := range e.units[x] {
-					if e.units[x][y].Life > 0 {
-						e.draw(e.units[x][y].data, e.units[x][y].color)
-					}
+			for x := range e.points {
+				for y := range e.points[x] {
+					e.draw(e.points[x][y])
 				}
 			}
 		}
@@ -81,10 +125,7 @@ func (e *Engine) Init (action func([][]*TUnit) error, width uint, height uint) e
 	return nil
 }
 
-func (e *Engine) draw(data []float32, color TColor)  {
+func (e *Engine) draw(point *Point)  {
 	loc := gl.GetUniformLocation(e.handler, gl.Str("un_color" + "\x00"))
-	gl.Uniform3f(loc, float32(color.R), float32(color.G), float32(color.B))
-
-	gl.BindVertexArray(glMakeVao(data))
-	gl.DrawArrays(gl.TRIANGLES, 0, int32(len(data) / 3))
+	point.Draw(loc)
 }

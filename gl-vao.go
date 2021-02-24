@@ -20,3 +20,30 @@ func glMakeVao(points []float32) uint32 {
 
 	return vao
 }
+
+func glPrepareTriangles(columns, rows uint, x, y int) []float32 {
+	var (
+		triangles = []float32{
+			-1 , 1 * (2 / float32(rows) - 1), 0,
+			1 * (2 / float32(columns) - 1), -1, 0,
+			-1, -1, 0,
+
+			-1 , 1 * (2 / float32(rows) - 1), 0,
+			1 * (2 / float32(columns) - 1), 1 * (2 / float32(rows) - 1), 0,
+			1 * (2 / float32(columns) - 1), -1, 0,
+		}
+	)
+
+	offset := []float32 {
+		0.0,
+
+		2 / float32(columns) * float32(x),
+		2 / float32(rows) * float32(y),
+	}
+
+	for i := 0; i < len(triangles); i++ {
+		triangles[i] += offset[(i + 1) % 3]
+	}
+
+	return triangles
+}
